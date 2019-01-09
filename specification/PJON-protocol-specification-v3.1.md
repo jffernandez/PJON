@@ -1,82 +1,64 @@
+### Specifications index
+
 #### Network layer
-- PJON (Padded Jittering Operative Network) Protocol specification: **[v3.0](/specification/PJON-protocol-specification-v3.0.md)**
-- PJON Acknowledge specification: [v1.0](/specification/PJON-protocol-acknowledge-specification-v1.0.md)
-- PJON Dynamic addressing specification: [v2.0](/specification/PJON-dynamic-addressing-specification-v2.0.md)
-- PJON Network services: [list](/specification/PJON-network-services-list.md)
+- **[PJON (Padded Jittering Operative Network) v3.1](/specification/PJON-protocol-specification-v3.1.md)**
+- [Acknowledge specification v1.0](/specification/PJON-protocol-acknowledge-specification-v1.0.md)
+- [Dynamic addressing specification v2.0](/specification/PJON-dynamic-addressing-specification-v2.0.md)
+- [Network services list](/specification/PJON-network-services-list.md)
 #### Data link layer
-- PJDL (Padded Jittering Data Link) specification:
-[PJDL v2.0](/src/strategies/SoftwareBitBang/specification/PJDL-specification-v2.0.md) - [PJDLR v2.0](/src/strategies/OverSampling/specification/PJDLR-specification-v2.0.md) - [PJDLS v2.0](/src/strategies/AnalogSampling/specification/PJDLS-specification-v2.0.md)
-- TSDL (Tardy Serial Data Link) specification: [TSDL v2.0](/src/strategies/ThroughSerial/specification/TSDL-specification-v2.0.md)
-- SFSP (Secure Frame Separation Protocol) specification: [SFSP v1.0](/specification/SFSP-frame-separation-specification-v1.0.md)
+- [PJDL (Padded Jittering Data Link) v3.0](/src/strategies/SoftwareBitBang/specification/PJDL-specification-v3.0.md)
+- [PJDLR (Padded Jittering Data Link over Radio) v2.0](/src/strategies/OverSampling/specification/PJDLR-specification-v2.0.md)
+- [PJDLS (Padded Jittering Data Link byte Stuffed) v2.0](/src/strategies/AnalogSampling/specification/PJDLS-specification-v2.0.md)
+- [TSDL (Tardy Serial Data Link) v2.1](/src/strategies/ThroughSerial/specification/TSDL-specification-v2.1.md)
+- [SFSP (Secure Frame Separation Protocol) v1.0](/specification/SFSP-frame-separation-specification-v1.0.md)
 
-```cpp
-/*
-Milan, Italy
-Originally published: 10/04/2010
-latest revision: 04/05/2018
-PJON® protocol layer specification v3.0
-Invented by Giovanni Blu Mitolo,
-header driven configuration proposed
-by Fred Larsen, released into the public domain
+---
 
+## PJON® v3.1
+```
+Invented by Giovanni Blu Mitolo
+Header feature proposed by Fred Larsen
+Originally published: 10/04/2010, latest revision: 31/10/2018
 Related work: https://github.com/gioblu/PJON/
 Compliant implementations: PJON v10.0 and following
-
-Changelog:
-- Port identification feature added
-- Packet id generalization
-*/
+Released into the public domain
 ```
-
-### PJON® Protocol specification v3.0
-The PJON protocol v3.0 in local mode supports connectivity for up to 254 devices, in shared mode supports connectivity for up to 4.294.967.295 buses (groups of devices) and up to 1.090.921.692.930 devices. Thanks to its modularity, dynamic packet format, low memory footprint and low overhead (5-22 bytes) PJON can be used as an alternative to 1-Wire or i2c to connect microcontrollers with limited resources but can also be applied in place of TCP-IP to interconnect more complex networks.   
+The PJON protocol v3.0 in local mode supports connectivity for up to 254 devices, in shared mode supports connectivity for up to 4.294.967.295 buses (groups of devices) and up to 1.090.921.692.930 devices. The packet format is dynamic therefore meta-data can be optionally included using the header as a bitmap of selected features. It supports interoperability between systems using different header configurations and provides with high efficiency including only the protocol's features used and the overhead (5-22 bytes) effectively required. PJON can be used for simple low-data-rate applications as an alternative to 1-Wire, i2c or CAN but can also be applied in place of IP to interconnect more complex networks.   
 
 The graph below shows the conceptual model that characterizes and standardizes the communication. Its goal is the interoperability of diverse systems on a wide range of media with the use of a new set of open-source protocols. The graph partitions represent abstraction layers.
 
-```cpp  
- _____________________________________________
-| 7 Application layer                         |
-| Remote access, automation, data sharing     |
-|_____________________________________________|
-| 6 Presentation layer                        |
-| Encryption, encoding, data compression      |
-|_____________________________________________|
-| 5 Session layer                             |
-| Semi-permanent interactive exchange         |
-|_____________________________________________|
- You are here                                 
- _|___________________________________________
-| 4 Transport layer: PJON                     |
-| Error detection, traffic control,           |
-| network service identification,             |
-| asynchronous acknowledgement                |
-|_____________________________________________|
-| 3 Network layer: PJON                       |
-| Addressing, packet transmission,            |
-| packet identification, routing, switching,  |
-| synchronous acknowledgment                  |
-|_____________________________________________|
-| 2 Data link layer: PJDL, PJDLR, PJDLS, TSDL |
-| Collision avoidance, frame transmission,    |
-| synchronous response                        |
-|_____________________________________________|
-| 1 Physical layer                            |
-| Electric, radio, light impulses             |
-|_____________________________________________|
+```
+ ________________________________________________
+| 3 Network layer: PJON                          |
+| Local and shared network addressing            |
+| Broadcast or addressed packet transmission     |
+| Routing and switching                          |
+| Congestion control                             |
+| Error detection                                |
+| Packet identification                          |
+| Service identification                         |
+| Asynchronous acknowledgement                   |
+|________________________________________________|
+| 2 Data link layer: PJDL, PJDLR, PJDLS, TSDL    |
+| Medium access control                          |
+| Frame transmission                             |
+| Synchronous acknowledgement                    |
+|________________________________________________|
+| 1 Physical layer:                              |
+| Electric, radio or light impulses              |
+|________________________________________________|
 ```
 
 ### Basic concepts
-* Transmission occurs only if the communication medium is not in use
 * Packet transmission is regulated by a 1 byte header
 * Devices communicate through packets with a maximum length of 255 or 65535 bytes
-* Every device has an equal right to transmit and receive
-* Every device has a unique 1 byte id
-* Every device can obtain an id if available (see [Dynamic addressing specification v1.0](/specification/PJON-dynamic-addressing-specification-v2.0.md))
-* Every bus has a unique 4 bytes id
-* Every device can be connected to n PJON buses
+* Devices are identified by a unique 1 byte device id
+* Devices can obtain an id if available (see [Dynamic addressing specification v1.0](/specification/PJON-dynamic-addressing-specification-v2.0.md))
+* Buses are identified with a 4 bytes bus id
 * Many buses can coexist on the same medium
 * Synchronous and or asynchronous acknowledgement can be requested (see [Acknowledge specification v1.0](/specification/PJON-protocol-acknowledge-specification-v1.0.md))
-* Network service identifier using a 2 bytes port identification  
+* Network services are identified with a 2 bytes service identifier  
+
 
 ### Bus
 A PJON bus is made by a group of up to 254 devices transmitting and receiving on the same medium. Communication between devices occurs through packets and it is based on fairness or on the right of each device to equally share the bandwidth available.
@@ -96,13 +78,14 @@ ____|___________|___________|___________|___
 A PJON bus network is the result of n buses sharing the same medium and or being interconnected with other buses through routers. On a shared medium it is required the use a 4 bytes bus id to isolate a group of devices from communication of other buses nearby, enabling many to coexist and network on the same communication medium.
 ```cpp  
 TWO BUSES SHARING THE SAME MEDIUM
+1 collision domain
 
     BUS ID 0.0.0.1             BUS ID 0.0.0.2
  _______     _______         _______     _______
 |       |   |       |       |       |   |       |
 | ID 1  |   | ID 2  |       | ID 1  |   | ID 2  |
 |_______|   |_______|       |_______|   |_______|
-______|___________|______________|___________|______
+______|___________|______________|___________|___
        ___|___                     ___|___
       |       |                   |       |
       | ID 3  |                   | ID 3  |
@@ -122,17 +105,18 @@ A Switch is a device that forwards packets transparently between directly connec
 A router is a device connected to n PJON devices or buses on n dedicated media, able to route packets from a device, a bus or a medium to another. The router can operate in a network with a tree topology and no loops forwarding packets transparently. Packets can be routed between indirectly connected buses if a routing table or a default gateway is used.
 ```cpp
 TWO BUSES CONNECTED THROUGH A ROUTER
+2 collision domains
 
-   BUS ID 0.0.0.1                  BUS ID 0.0.0.2
- _______     _______             _______     _______
-|       |   |       |           |       |   |       |
-| ID 1  |   | ID 2  |           | ID 1  |   | ID 2  |
-|_______|   |_______|   ______  |_______|   |_______|
-_____|___________|_____|ROUTER|_____|___________|____
-       ___|___         | ID 3 |        ___|___
-      |       |        |______|       |       |
-      | ID 3  |                       | ID 3  |
-      |_______|                       |_______|
+   BUS ID 0.0.0.1                 BUS ID 0.0.0.2
+ _______     _______            _______     _______
+|       |   |       |          |       |   |       |
+| ID 1  |   | ID 2  |          | ID 1  |   | ID 2  |
+|_______|   |_______|  ______  |_______|   |_______|
+_____|___________|____|ROUTER|_____|___________|____
+       ___|___        | ID 3 |        ___|___
+      |       |       |______|       |       |
+      | ID 3  |                      | ID 3  |
+      |_______|                      |_______|
 ```
 
 ### Header configuration
@@ -146,14 +130,14 @@ HEADER BITMAP
 |ID    |LENGTH|    |     |MODE |     |INFO |     |
 |______|______|____|_____|_____|_____|_____|_____|
 ```
-1. `PACKET ID` bit informs if the packet contains (value 1) or not (value 0) a 2 bytes [packet id](/specification/PJON-protocol-specification-v3.0.md#packet-identification)
-2. `EXT. LENGTH` bit informs if the packet contains 1 (value 0) or 2 (value 1) bytes [length](/specification/PJON-protocol-specification-v3.0.md#extended-length)
-3. `CRC` bit signals which CRC is used, [CRC8](/specification/PJON-protocol-specification-v3.0.md#crc8-polynomial) (value 0) or [CRC32](/specification/PJON-protocol-specification-v3.0.md#crc32-polynomial) (value 1)
-4. `PORT` bit informs if the packet contains a 2 bytes [network service identifier](/specification/PJON-protocol-specification-v3.0.md#network-services) (value 1) or not (value 0)
-5. `ACK MODE` bit signals [synchronous](/specification/PJON-protocol-acknowledge-specification-v1.0.md#synchronous-acknowledge) (value 0) or [asynchronous](/specification/PJON-protocol-acknowledge-specification-v1.0.md#asynchronous-acknowledge) (value 1) acknowledgment mode
-6. `ACK` bit informs if [acknowledgment](/specification/PJON-protocol-acknowledge-specification-v1.0.md) is requested (value 1) or not (value 0)
+1. `PACKET ID` bit informs if the packet contains (value 1) or not (value 0) a 2 bytes [packet id](/specification/PJON-protocol-specification-v3.1.md#packet-identification)
+2. `EXT. LENGTH` bit informs if the packet contains 1 (value 0) or 2 (value 1) bytes [length](/specification/PJON-protocol-specification-v3.1.md#extended-length)
+3. `CRC` bit signals which CRC is used, [CRC8](/specification/PJON-protocol-specification-v3.1.md#crc8-polynomial) (value 0) or [CRC32](/specification/PJON-protocol-specification-v3.1.md#crc32-polynomial) (value 1)
+4. `PORT` bit informs if the packet contains a 2 bytes [network service identifier](/specification/PJON-protocol-specification-v3.1.md#network-services) (value 1) or not (value 0)
+5. `ACK MODE` bit signals [synchronous](/specification/PJON-protocol-acknowledge-specification-v1.0.md#synchronous-acknowledge) (value 0) or [asynchronous](/specification/PJON-protocol-acknowledge-specification-v1.0.md#asynchronous-acknowledge) (value 1) acknowledgement mode
+6. `ACK` bit informs if [acknowledgement](/specification/PJON-protocol-acknowledge-specification-v1.0.md) is requested (value 1) or not (value 0)
 7. `TX INFO` bit informs if the sender info are included (value 1) or not (value 0)
-8. `MODE` bit informs if the packet is formatted in [shared](/specification/PJON-protocol-specification-v3.0.md#shared-mode) (value 1) or [local](/specification/PJON-protocol-specification-v3.0.md#local-mode) mode (value 0)  
+8. `MODE` bit informs if the packet is formatted in [shared](/specification/PJON-protocol-specification-v3.1.md#shared-mode) (value 1) or [local](/specification/PJON-protocol-specification-v3.1.md#local-mode) mode (value 0)  
 
 Unacceptable header configuration states for standard transmission:
 * `----1-0-` or `ACK MODE` bit high, and `TX INFO` bit low (asynchronous acknowledgement requires transmitter info)
@@ -186,7 +170,7 @@ PJON supports both CRC8 and CRC32 to ensure safety on a wide range of use cases 
 CRC8 is calculated and appended to the initial meta-data (id, header and length) to ensure consistency, avoid false positives and the length corruption vulnerability that affects CAN (Controlled Area Network) and many other protocols.
 
 #### End CRC8/CRC32
-CRC8 is calculated on both data and meta-data and it is appended at the end of packets of up to 15 bytes length (including overhead). CRC32 is automatically used if packet length exceeds 15 bytes but can be optionally used for shorter than 15 bytes packets if higher accuracy is required.
+CRC8 is calculated on both data and meta-data and it is appended at the end of packets of up to 15 bytes length (including overhead). CRC32 must be used if packet length exceeds 15 bytes but can be optionally used also for shorter packets if higher accuracy is required.
 
 ### Packet transmission
 A default local packet transmission is an optionally bidirectional communication between two devices that can be divided in 3 different phases: **channel analysis**, **transmission** and optional **response**. In the channel analysis phase transmitter assess the medium's state before starting transmission to avoid collision. If the medium is free for use, transmission phase starts where the packet is entirely transmitted. The receiving device calculates CRC and starts the response phase transmitting a single byte, `PJON_ACK` (decimal 6) in case of correct data reception. If no acknowledgement is received, after an exponential back-off delay, the transmitter device retries until acknowledgement is received or a maximum number of attempts is reached and packet transmission discarded.
@@ -211,6 +195,16 @@ Depending on header's `MODE` bit, PJON packets can contain basic or extended sup
 |____|__________|________|______|________|______|
 ```
 
+In local mode packets can be broadcasted to all devices sending to device id `0`. Acknowledgement is not supported therefore any broadcasted packet that requests synchronous and or asynchronous acknowledgement is ignored by recipients.
+
+```cpp
+ _______________________________________________
+| ID |  HEADER  | LENGTH | CRC8 |  DATA  | CRC8 |
+|----|----------|--------|------|--------|------|
+| 0  | 00000000 |   6    |      |   64   |      |
+|____|__________|________|______|________|______|
+```
+
 If header's `TX INFO` bit is high the sender's device id is included in the packet.
 
 ```cpp
@@ -223,12 +217,23 @@ If header's `TX INFO` bit is high the sender's device id is included in the pack
 ```
 
 #### Shared mode
-If header's `MODE` bit is high [bus](/specification/PJON-protocol-specification-v3.0.md#bus) identification is added to the packet. Below, the same local transmission used as an example above is formatted to be sent in shared mode to device id `12` of bus id `0.0.0.1`. The packet's content is prepended with the bus id of the recipient as requested by header's `MODE` bit.
+If header's `MODE` bit is high [bus](/specification/PJON-protocol-specification-v3.1.md#bus) identification is added to the packet. Below, the same local transmission used as an example above is formatted to be sent in shared mode to device id `12` of bus id `0.0.0.1`. The packet's content is prepended with the bus id of the recipient as requested by header's `MODE` bit.
 ```cpp
  ________________________________________
 |ID| HEADER |LENGTH|CRC8|BUS ID|DATA|CRC8|
 |--|--------|------|----|------|----|----|
 |12|00000001|  10  |    | 0001 | 64 |    |
+|__|________|______|____|______|____|____|
+
+```
+
+In shared mode packets can be broadcasted to all devices sharing the same bus id sending to device id `0`. Acknowledgement is not supported, therefore any broadcasted packet that requests synchronous and or asynchronous acknowledgement is ignored by recipients.
+
+```cpp
+ ________________________________________
+|ID| HEADER |LENGTH|CRC8|BUS ID|DATA|CRC8|
+|--|--------|------|----|------|----|----|
+|0 |00000001|  10  |    | 0001 | 64 |    |
 |__|________|______|____|______|____|____|
 
 ```
